@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joe's Finance Command Center V7.5</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <style>
+        :root {
+            --neon-blue: #00d2ff;
+            --neon-green: #39ff14;
+            --neon-red: #ff3131;
+            --bg-dark: #0f172a;
+            --glass: rgba(30, 41, 59, 0.9);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-dark);
+            background-image: radial-gradient(circle at top right, rgba(0,210,255,0.15), transparent);
+            color: white; margin: 0; padding: 15px; display: flex; justify-content: center; min-height: 100vh;
+        }
+
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            width: 100%; max-width: 450px; padding: 25px; border-radius: 24px;
+            border: 1px solid rgba(0, 210, 255, 0.4);
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.7);
+        }
+
+        /* 即時儀表板 */
+        .dashboard {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            margin-bottom: 25px; background: rgba(0,0,0,0.4); padding: 20px;
+            border-radius: 18px; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .stat-box { text-align: center; }
+        .stat-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-value { font-size: 20px; font-weight: bold; margin-top: 5px; font-family: 'Courier New', monospace; }
+        .net-box { grid-column: span 2; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
+        
+        .income-text { color: var(--neon-green); text-shadow: 0 0 10px rgba(57,255,20,0.3); }
+        .expense-text { color: var(--neon-red); text-shadow: 0 0 10px rgba(255,49,49,0.3); }
+        .net-text { color: var(--neon-blue); text-shadow: 0 0 10px rgba(0,210,255,0.3); }
+
+        /* 掃描區 */
+        .scan-zone {
+            border: 2px dashed var(--neon-blue); border-radius: 16px; padding: 20px;
+            text-align: center; margin-bottom: 20px; cursor: pointer; transition: 0.3s;
+        }
+        .scan-zone:active { transform: scale(0.98); background: rgba(0,210,255,0.1); }
+        #status-msg { font-size: 12px; color: var(--neon-green); margin-top: 10px; font-family: monospace; }
+        #preview-img { width: 100%; max-height: 120px; object-fit: contain; display: none; margin-top: 15px; border-radius: 10px; border: 1px solid var(--neon-blue); }
+
+        /* 輸入框 */
+        .input-group { margin-bottom: 15px; }
+        .label { font-size: 11px; color: var(--neon-blue); margin-bottom: 5px; display: block; font-weight: bold; letter-spacing: 1px; }
+        input, select, textarea {
+            width: 100%; padding: 12px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; color: white; font-size: 16px; box-sizing: border-box;
+        }
+        input:focus, select:focus { border-color: var(--neon-green); outline: none; }
+
+        .row { display: flex; gap: 10px; }
+        .row > div { flex: 1; }
+
+        .save-btn {
+            width: 100%; padding: 18px; background: linear-gradient(45deg, var(--neon-blue), #0081ff);
+            border: none; border-radius: 14px; color: #000; font-size: 18px; font-weight: 900;
+            cursor: pointer; text-transform: uppercase; letter-spacing: 2px; margin-top: 15px;
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.4);
+        }
+        .save-btn:disabled { background: #334155; box-shadow: none; color: #94a3b8; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2 style="text-align: center; color: var(--neon-blue); margin-top:0; letter-spacing: 5px;">JOE FINANCE V7.5</h2>
+    
+    <div class="dashboard">
+        <div class="stat-box">
+            <div class="stat-label">TOTAL INCOME</div>
+            <div id="disp-income" class="stat-value income-text">$ 0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">TOTAL EXPENSE</div>
+            <div id="disp-expense" class="stat-value expense-text">$ 0</div>
+        </div>
+        <div class="stat-box net-box">
+            <div class="stat-label">NET BALANCE (淨值)</div>
+            <div id="disp-net" class="stat-value net-text">$ 0</div>
+        </div>
+    </div>
+
+    <div class="scan-zone" onclick="document.getElementById('file-input').click()">
+        <div style="font-size: 30px;">📸</div>
+        <div style="font-weight: bold; font-size: 14px;">AUTO SCAN SYSTEM</div>
+        <div id="status-msg">READY FOR INPUT</div>
+        <img id="preview-img">
+    </div>
+
+    <input type="file" id="file-input" accept="image/*" style="display:none">
+
+    <div class="input-group">
+        <span class="label">ITEM / 項目</span>
+        <input type="text" id="desc" placeholder="請輸入或掃描名稱">
+    </div>
+    
+    <div class="input-group">
+        <span class="label">AMOUNT / 金額</span>
+        <input type="number" id="amount" placeholder="0.00" inputmode="decimal">
+    </div>
+
+    <div class="input-group">
+        <span class="label">TARGET /成員</span>
+        <select id="member">
+            <option value="我">🧑 我</option>
+            <option value="老婆">👩 老婆</option>
+            <option value="冰棒">🐕 冰棒</option>
+            <option value="雪糕">🐈 雪糕</option>
+            <option value="家庭">🏠 家庭</option>
+            <option value="家族">🌐 家族</option>
+        </select>
+    </div>
+    
+    <div class="row">
+        <div class="input-group">
+            <span class="label">CATEGORY / 類型</span>
+            <select id="type">
+                <optgroup label="支出類別">
+                    <option value="飲食">🍔 飲食</option>
+                    <option value="交通">🚗 交通</option>
+                    <option value="生活">🏠 生活</option>
+                    <option value="娛樂">🎮 娛樂</option>
+		    <option value="醫療">🏥 醫療</option>
+		    <option value="旅遊">🛩️ 旅遊</option>
+                </optgroup>
+                <optgroup label="收入類別">
+                    <option value="本薪">💰 本薪</option>
+                    <option value="出差補助">✈️ 出差補助</option>
+                    <option value="股票價差">📈 股票價差</option>
+                    <option value="股利收益">💹 股利收益</option>
+                    <option value="其他收入">🧧 其他收入</option>
+                </optgroup>
+            </select>
+        </div>
+        <div class="input-group">
+            <span class="label">PAYMENT / 支付方式</span>
+            <select id="method">
+                <option value="現金">💵 現金</option>
+                <option value="刷卡">💳 信用卡</option>
+                <option value="LinePay">📱 LinePay</option>
+                <option value="銀行轉帳">🏦 銀行轉帳</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="input-group">
+        <span class="label">NOTE / 備註</span>
+        <textarea id="note" rows="2"></textarea>
+    </div>
+    
+    <button onclick="saveData()" id="saveBtn" class="save-btn">EXECUTE SYNC</button>
+</div>
+
+<script>
+    // 請填入你最新部署的 GAS 網址 (/exec 結尾)
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwPu2wDdL1oX-izhvJSNjxEpFbskKunk8eCalpjlSl4V_obFjDxBqLH1HzWGUof__hd/exec";
+
+    // 頁面初始化：讀取儀表板數字
+    window.onload = refreshStats;
+
+    async function refreshStats() {
+        try {
+            const response = await fetch(GAS_URL);
+            const data = await response.json();
+            document.getElementById('disp-income').innerText = `$ ${data.income.toLocaleString()}`;
+            document.getElementById('disp-expense').innerText = `$ ${data.expense.toLocaleString()}`;
+            document.getElementById('disp-net').innerText = `$ ${data.net.toLocaleString()}`;
+        } catch (e) {
+            console.error("Dashboard Sync Failed");
+        }
+    }
+
+    // 收入項目連動填寫
+    document.getElementById('type').onchange = function() {
+        const incomeTypes = ["本薪", "出差補助", "股票價差", "股利收益", "其他收入"];
+        if (incomeTypes.includes(this.value)) {
+            document.getElementById('desc').value = this.value;
+        }
+    };
+
+    // AI 掃描邏輯
+    document.getElementById('file-input').onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const img = document.getElementById('preview-img');
+        img.src = URL.createObjectURL(file);
+        img.style.display = 'block';
+        
+        const status = document.getElementById('status-msg');
+        status.innerText = "📡 ANALYZING DATA...";
+
+        try {
+            const worker = await Tesseract.createWorker('chi_tra+eng');
+            const { data: { text } } = await worker.recognize(file);
+            
+            const nums = text.match(/\d+/g);
+            if (nums) {
+                const prices = nums.map(Number).filter(n => n >= 10 && n < 1000000);
+                if (prices.length > 0) document.getElementById('amount').value = Math.max(...prices);
+            }
+            
+            const lines = text.split('\n').filter(l => l.trim().length > 2);
+            if (lines[0]) document.getElementById('desc').value = lines[0].substring(0, 15);
+
+            await worker.terminate();
+            status.innerText = "✅ SCAN COMPLETED";
+        } catch (err) {
+            status.innerText = "❌ SCAN ERROR";
+        }
+    };
+
+    // 傳送資料
+    async function saveData() {
+        const btn = document.getElementById('saveBtn');
+        const data = {
+            desc: document.getElementById('desc').value,
+            amount: document.getElementById('amount').value,
+            type: document.getElementById('type').value,
+            method: document.getElementById('method').value,
+            member: document.getElementById('member').value,
+            note: document.getElementById('note').value
+        };
+
+        if (!data.desc || !data.amount) return alert("請輸入項目與金額");
+
+        btn.disabled = true;
+        btn.innerText = "SYNCING...";
+
+        try {
+            await fetch(GAS_URL, { method: "POST", mode: 'no-cors', body: JSON.stringify(data) });
+            alert("✅ 雲端同步成功！");
+            location.reload(); // 存完後自動重整刷新面板數字
+        } catch (e) {
+            alert("同步失敗：" + e);
+            btn.disabled = false;
+            btn.innerText = "EXECUTE SYNC";
+        }
+    }
+</script>
+</body>
+</html>
