@@ -176,11 +176,19 @@
         document.getElementById('disp-expense').innerText = `$${e_t.toLocaleString()}`;
         document.getElementById('disp-net').innerText = `$${(i_t-e_t).toLocaleString()}`;
 
-        google.charts.setOnLoadCallback(() => {
+       google.charts.setOnLoadCallback(() => {
             draw('exp-chart', Object.entries(eM), colors.exp, 'exp-legend');
             draw('inc-chart', Object.entries(iM), colors.inc, 'inc-legend');
-            draw('net-chart', [['支出', e_t], ['結餘', (i_t-e_t)>0?(i_t-e_t):0]], colors.net, 'net-legend');
-        });
+            
+            // 修正：盈餘圖表邏輯
+            const balance = i_t - e_t;
+            if (balance >= 0) {
+                draw('net-chart', [['支出', e_t], ['結餘', balance]], colors.net, 'net-legend');
+            } else {
+                // 赤字時，顯示收入與超支部分
+                draw('net-chart', [['收入', i_t], ['超支', Math.abs(balance)]], ['#39FF14', '#BC13FE'], 'net-legend');
+            }
+        });    
     }
 
     function draw(id, dataArr, clrs, legId) {
