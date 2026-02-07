@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Joe's Finance Pro V12.0</title>
+    <title>Joe's Finance Command Center V16</title>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <style>
         :root {
@@ -11,199 +11,195 @@
             --bg-dark: #0f172a; --glass: rgba(30, 41, 59, 0.9);
         }
         body {
-            font-family: 'Segoe UI', sans-serif; background: var(--bg-dark);
-            background-image: radial-gradient(circle at top right, rgba(0,210,255,0.1), transparent);
-            color: white; margin: 0; padding: 15px; display: flex; justify-content: center;
+            font-family: system-ui, -apple-system, sans-serif; background: var(--bg-dark);
+            color: white; margin: 0; padding: 10px; display: flex; justify-content: center;
         }
-        .card { background: var(--glass); backdrop-filter: blur(15px); width: 100%; max-width: 450px; padding: 20px; border-radius: 24px; border: 1px solid rgba(0, 210, 255, 0.3); }
+        .card { background: var(--glass); width: 100%; max-width: 600px; padding: 15px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); }
         
-        /* 篩選區 */
-        .filter-zone { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 18px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); }
-        .filter-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
-        .filter-row input { flex: 1; padding: 8px; font-size: 12px; background: #000; border: 1px solid var(--neon-blue); color: white; border-radius: 8px; }
-        .quick-btns { display: flex; gap: 5px; }
-        .quick-btns button { flex: 1; padding: 6px; font-size: 11px; background: rgba(255,255,255,0.1); border: none; color: #ccc; border-radius: 6px; cursor: pointer; }
-        .quick-btns button.active { background: var(--neon-blue); color: #000; font-weight: bold; }
-
         /* 看板 */
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 15px; }
-        .stat-box { text-align: center; }
-        .stat-label { font-size: 9px; color: #94a3b8; text-transform: uppercase; }
-        .stat-value { font-size: 18px; font-weight: bold; font-family: monospace; }
-        .income-text { color: var(--neon-green); } .expense-text { color: var(--neon-red); } .net-text { color: var(--neon-blue); }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 12px; text-align: center; }
+        .stat-label { font-size: 9px; color: #94a3b8; margin-bottom: 4px; }
+        .stat-value { font-size: 14px; font-weight: bold; font-family: monospace; }
 
-        #piechart { width: 100%; height: 180px; margin-bottom: 15px; }
+        /* 三圖平行 */
+        .charts-row { display: flex; justify-content: space-between; gap: 5px; margin-bottom: 10px; }
+        .chart-box { 
+            flex: 1; min-width: 0; background: rgba(255,255,255,0.02); 
+            border-radius: 12px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center;
+        }
+        .chart-title { font-size: 10px; color: var(--neon-blue); font-weight: bold; margin-bottom: 5px; }
+        .chart-obj { width: 100%; height: 90px; }
+        
+        /* 自定義圖例 (Legend) */
+        .custom-legend { 
+            width: 100%; font-size: 9px; margin-top: 5px; 
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 4px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 3px; color: #94a3b8; white-space: nowrap; }
+        .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
 
         /* 輸入區 */
-        .input-group { margin-bottom: 10px; }
-        .label { font-size: 11px; color: var(--neon-blue); margin-bottom: 3px; display: block; }
-        input, select { width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; box-sizing: border-box; }
-        #amount { font-size: 20px; color: var(--neon-green); text-align: center; font-weight: bold; }
-        .save-btn { width: 100%; padding: 15px; background: linear-gradient(45deg, var(--neon-blue), #0081ff); border: none; border-radius: 12px; color: #000; font-size: 16px; font-weight: 900; cursor: pointer; margin-top: 10px; }
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .label { font-size: 10px; color: #64748b; margin-bottom: 4px; display: block; }
+        input, select { width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; font-size: 14px; box-sizing: border-box; }
+        .save-btn { width: 100%; padding: 15px; background: linear-gradient(45deg, var(--neon-blue), #0081ff); border: none; border-radius: 10px; color: #000; font-size: 16px; font-weight: 900; cursor: pointer; margin-top: 15px; }
+        
+        .quick-btns { display: flex; gap: 4px; margin-bottom: 10px; }
+        .quick-btns button { flex: 1; padding: 6px; font-size: 11px; background: rgba(255,255,255,0.05); border: none; color: #94a3b8; border-radius: 6px; cursor: pointer; }
+        .quick-btns button.active { background: var(--neon-blue); color: #000; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h3 style="text-align: center; color: var(--neon-blue); margin-top: 0; letter-spacing: 2px;">FINANCE PRO V12</h3>
-
-    <div class="filter-zone">
-        <div class="filter-row">
-            <input type="date" id="start-date" onchange="filterData()">
-            <span style="font-size: 12px; color: #666;">至</span>
-            <input type="date" id="end-date" onchange="filterData()">
-        </div>
-        <div class="quick-btns">
-            <button onclick="setQuickDate('today', this)">今日</button>
-            <button onclick="setQuickDate('month', this)" class="active">本月</button>
-            <button onclick="setQuickDate('year', this)">本年</button>
-            <button onclick="setQuickDate('all', this)">全部</button>
-        </div>
+    <div class="quick-btns">
+        <button onclick="setQuickDate('today', this)">今日</button>
+        <button onclick="setQuickDate('month', this)" class="active">本月</button>
+        <button onclick="setQuickDate('year', this)">本年</button>
+        <button onclick="setQuickDate('all', this)">全部</button>
     </div>
 
     <div class="dashboard">
-        <div class="stat-box"><div class="stat-label">收入</div><div id="disp-income" class="stat-value income-text">$ 0</div></div>
-        <div class="stat-box"><div class="stat-label">支出</div><div id="disp-expense" class="stat-value expense-text">$ 0</div></div>
-        <div class="stat-box" style="grid-column: span 2; margin-top: 5px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 5px;">
-            <div class="stat-label">淨結餘</div><div id="disp-net" class="stat-value net-text">$ 0</div>
+        <div><div class="stat-label">收入</div><div id="disp-income" class="stat-value" style="color:var(--neon-green)">$0</div></div>
+        <div><div class="stat-label">支出</div><div id="disp-expense" class="stat-value" style="color:var(--neon-red)">$0</div></div>
+        <div><div class="stat-label">結餘</div><div id="disp-net" class="stat-value" style="color:var(--neon-blue)">$0</div></div>
+    </div>
+
+    <div class="charts-row">
+        <div class="chart-box">
+            <div class="chart-title">支出</div>
+            <div id="exp-chart" class="chart-obj"></div>
+            <div id="exp-legend" class="custom-legend"></div>
+        </div>
+        <div class="chart-box">
+            <div class="chart-title">結餘</div>
+            <div id="net-chart" class="chart-obj"></div>
+            <div id="net-legend" class="custom-legend"></div>
+        </div>
+        <div class="chart-box">
+            <div class="chart-title">收入</div>
+            <div id="inc-chart" class="chart-obj"></div>
+            <div id="inc-legend" class="custom-legend"></div>
         </div>
     </div>
 
-    <div id="piechart"></div>
-
-    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 15px 0;">
-
-    <div class="input-group">
-        <span class="label">日期</span>
-        <input type="date" id="entry-date">
+    <div class="input-grid">
+        <div><span class="label">日期</span><input type="date" id="entry-date"></div>
+        <div><span class="label">金額</span><input type="number" id="amount" placeholder="$" inputmode="decimal"></div>
     </div>
-    <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 8px;">
-        <div class="input-group"><span class="label">項目</span><input type="text" id="desc" placeholder="名稱"></div>
-        <div class="input-group"><span class="label">對象</span>
-            <select id="member"><option value="我">我</option><option value="老婆">老婆</option><option value="冰棒">冰棒</option><option value="雪糕">雪糕</option><option value="家庭">家庭</option></select>
+    <div class="input-grid">
+        <div><span class="label">項目</span><input type="text" id="desc" placeholder="名稱"></div>
+        <div><span class="label">分類</span>
+            <select id="type">
+                <optgroup label="支出"><option value="飲食">飲食</option><option value="交通">交通</option><option value="生活">生活</option><option value="娛樂">娛樂</option><option value="醫療">醫療</option></optgroup>
+                <optgroup label="收入"><option value="本薪">本薪</option><option value="出差費">出差費</option><option value="獎金">獎金</option><option value="股票收益">股票收益</option><option value="股息">股息</option><option value="其他">其他</option></optgroup>
+            </select>
         </div>
     </div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-        <div class="input-group"><span class="label">金額</span><input type="number" id="amount" placeholder="0" inputmode="decimal"></div>
-        <div class="input-group"><span class="label">類別</span>
-            <select id="type"><option value="飲食">🍔 飲食</option><option value="交通">🚗 交通</option><option value="生活">🏠 生活</option><option value="娛樂">🎮 娛樂</option><option value="醫療">🏥 醫療</option><option value="本薪">💰 本薪</option><option value="其他收入">🧧 其他收入</option></select>
-        </div>
+    <div class="input-grid">
+        <div><span class="label">對象</span><select id="member"><option value="我">我</option><option value="老婆">老婆</option><option value="家庭">家庭</option><option value="寵物">寵物</option></select></div>
+        <div style="display:flex; align-items:flex-end;"><button onclick="saveData()" id="saveBtn" class="save-btn">同步</button></div>
     </div>
-    <button onclick="saveData()" id="saveBtn" class="save-btn">確認同步</button>
 </div>
 
 <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwPu2wDdL1oX-izhvJSNjxEpFbskKunk8eCalpjlSl4V_obFjDxBqLH1HzWGUof__hd/exec"; 
-    let rawRows = []; // 儲存從 GAS 抓回來的原始資料
+    let rawRows = [];
+    const colorPals = {
+        exp: ['#FF3131', '#FF9F43', '#FECA57', '#54A0FF', '#5F27CD'],
+        inc: ['#39FF14', '#00D2FF', '#BC13FE', '#FF00FF', '#FFFF00'],
+        net: ['#1E293B', '#00D2FF']
+    };
 
     google.charts.load('current', {'packages':['corechart']});
 
-    window.onload = function() {
+    window.onload = () => {
         document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
         setQuickDate('month', document.querySelector('.quick-btns button.active'));
-        fetchFullData();
+        fetchData();
     };
 
-    // 抓取全量資料
-    async function fetchFullData() {
-        try {
-            const response = await fetch(GAS_URL);
-            rawRows = await response.json();
-            filterData();
-        } catch (e) { document.getElementById('piechart').innerHTML = "連線失敗"; }
+    async function fetchData() {
+        try { const r = await fetch(GAS_URL); rawRows = await r.json(); filterData(); } catch(e){}
     }
 
-    // 快捷日期設定
     function setQuickDate(mode, btn) {
         document.querySelectorAll('.quick-btns button').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-
         const now = new Date();
-        let start = new Date();
-        let end = new Date();
-
-        if (mode === 'today') {
-            start = now; end = now;
-        } else if (mode === 'month') {
-            start = new Date(now.getFullYear(), now.getMonth(), 1);
-            end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        } else if (mode === 'year') {
-            start = new Date(now.getFullYear(), 0, 1);
-            end = new Date(now.getFullYear(), 11, 31);
-        } else {
-            start = new Date(2000, 0, 1);
-            end = new Date(2100, 11, 31);
-        }
-
-        document.getElementById('start-date').value = start.toISOString().split('T')[0];
-        document.getElementById('end-date').value = end.toISOString().split('T')[0];
-        if (rawRows.length > 0) filterData();
+        let s = new Date(now.getFullYear(), now.getMonth(), 1);
+        let e = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        if(mode==='today'){ s=now; e=now; }
+        else if(mode==='year'){ s=new Date(now.getFullYear(), 0, 1); e=new Date(now.getFullYear(), 11, 31); }
+        document.getElementById('start-date-hidden').value = s.toISOString().split('T')[0];
+        document.getElementById('end-date-hidden').value = e.toISOString().split('T')[0];
+        if(rawRows.length > 0) filterData();
     }
 
-    // 核心過濾與計算邏輯
     function filterData() {
-        const start = new Date(document.getElementById('start-date').value);
-        const end = new Date(document.getElementById('end-date').value);
-        end.setHours(23, 59, 59);
-
-        let income = 0, expense = 0, categoryMap = {};
-        const incomeTypes = ["本薪", "出差補助", "股票價差", "股利收益", "其他收入"];
+        const start = new Date(document.getElementById('start-date-hidden').value);
+        const end = new Date(document.getElementById('end-date-hidden').value).setHours(23,59,59);
+        let inc=0, exp=0, expM={}, incM={};
+        const incTypes = ["本薪", "出差費", "獎金", "股票收益", "股息", "其他"];
 
         for (let i = 1; i < rawRows.length; i++) {
-            const rowDate = new Date(rawRows[i][0]);
-            const amt = Number(rawRows[i][2]);
-            const cat = rawRows[i][3];
-
-            if (rowDate >= start && rowDate <= end) {
-                if (incomeTypes.includes(cat)) {
-                    income += amt;
-                } else {
-                    expense += amt;
-                    categoryMap[cat] = (categoryMap[cat] || 0) + amt;
-                }
+            const d = new Date(rawRows[i][0]), a = Number(rawRows[i][2]), c = rawRows[i][3];
+            if (d >= start && d <= end) {
+                if (incTypes.includes(c)) { inc+=a; incM[c] = (incM[c]||0)+a; }
+                else { exp+=a; expM[c] = (expM[c]||0)+a; }
             }
         }
 
-        document.getElementById('disp-income').innerText = `$ ${income.toLocaleString()}`;
-        document.getElementById('disp-expense').innerText = `$ ${expense.toLocaleString()}`;
-        document.getElementById('disp-net').innerText = `$ ${(income - expense).toLocaleString()}`;
+        document.getElementById('disp-income').innerText = `$${inc.toLocaleString()}`;
+        document.getElementById('disp-expense').innerText = `$${exp.toLocaleString()}`;
+        const balance = inc - exp;
+        document.getElementById('disp-net').innerText = `$${balance.toLocaleString()}`;
 
-        const chartData = Object.entries(categoryMap);
-        google.charts.setOnLoadCallback(() => drawChart(chartData));
+        google.charts.setOnLoadCallback(() => {
+            renderChart('exp-chart', Object.entries(expM), colorPals.exp, 'exp-legend');
+            renderChart('inc-chart', Object.entries(incM), colorPals.inc, 'inc-legend');
+            renderChart('net-chart', [['支出', exp], ['剩餘', balance>0?balance:0]], colorPals.net, 'net-legend');
+        });
     }
 
-    function drawChart(chartData) {
-        const data = new google.visualization.DataTable();
-        data.addColumn('string', 'Category');
-        data.addColumn('number', 'Amount');
-        data.addRows(chartData);
-        const options = {
-            backgroundColor: 'transparent', pieHole: 0.4,
-            legend: { textStyle: { color: '#94a3b8', fontSize: 10 }, position: 'right' },
-            colors: ['#00d2ff', '#39ff14', '#ff3131', '#facc15', '#a855f7'],
-            chartArea: { width: '100%', height: '85%' }, pieSliceBorderColor: "none"
-        };
-        new google.visualization.PieChart(document.getElementById('piechart')).draw(data, options);
+    function renderChart(id, dataArr, colors, legendId) {
+        const container = document.getElementById(id);
+        const legendContainer = document.getElementById(legendId);
+        legendContainer.innerHTML = '';
+        if (dataArr.length === 0) { container.innerHTML = "---"; return; }
+
+        const data = google.visualization.arrayToDataTable([['L','V'], ...dataArr]);
+        new google.visualization.PieChart(container).draw(data, {
+            backgroundColor: 'transparent', pieHole: 0.6, colors: colors,
+            legend: 'none', chartArea: {width:'90%', height:'90%'}, pieSliceBorderColor: "none", pieSliceText: 'none'
+        });
+
+        // 建立自定義 Legend
+        dataArr.forEach((item, index) => {
+            const color = colors[index % colors.length];
+            legendContainer.innerHTML += `
+                <div class="legend-item">
+                    <span class="dot" style="background:${color}"></span>
+                    <span>${item[0]}</span>
+                </div>`;
+        });
     }
 
     async function saveData() {
         const btn = document.getElementById('saveBtn');
         const data = {
             date: document.getElementById('entry-date').value,
-            desc: document.getElementById('desc').value,
+            desc: document.getElementById('desc').value || "未命名",
             amount: document.getElementById('amount').value,
             type: document.getElementById('type').value,
             member: document.getElementById('member').value,
-            method: "手動輸入"
+            method: "App"
         };
-        if (!data.desc || !data.amount) return alert("請填寫完整");
+        if (!data.amount) return alert("請輸入金額");
         btn.disabled = true;
-        try {
-            await fetch(GAS_URL, { method: "POST", mode: 'no-cors', body: JSON.stringify(data) });
-            alert("✅ 同步成功");
-            location.reload(); 
-        } catch (e) { alert("失敗"); btn.disabled = false; }
+        try { await fetch(GAS_URL, { method: "POST", mode: 'no-cors', body: JSON.stringify(data) }); location.reload(); } catch(e){ btn.disabled=false; }
     }
 </script>
+<input type="hidden" id="start-date-hidden"><input type="hidden" id="end-date-hidden">
 </body>
 </html>
