@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joe's Family Finance PRO</title>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <style>
+        :root {
+            --neon-blue: #00d2ff; --neon-green: #39ff14; --neon-red: #ff3131;
+            --bg-dark: #0f172a; --glass: rgba(30, 41, 59, 0.9);
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif; background: var(--bg-dark);
+            color: white; margin: 0; padding: 10px; display: flex; justify-content: center;
+        }
+        .card { background: var(--glass); width: 100%; max-width: 500px; padding: 15px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .title { text-align: center; color: var(--neon-blue); letter-spacing: 2px; margin: 0 0 15px 0; }
+        
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 15px; text-align: center; }
+        .stat-label { font-size: 10px; color: #94a3b8; margin-bottom: 4px; }
+        .stat-value { font-size: 13px; font-weight: bold; font-family: monospace; }
+
+        .charts-row { display: flex; justify-content: space-between; gap: 5px; margin-bottom: 10px; }
+        .chart-box { flex: 1; min-width: 0; background: rgba(255,255,255,0.02); border-radius: 12px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; }
+        .chart-obj { width: 100%; height: 80px; }
+        .custom-legend { width: 100%; font-size: 8px; margin-top: 5px; display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; }
+        .legend-item { display: flex; align-items: center; gap: 2px; color: #cbd5e1; }
+        .dot { width: 5px; height: 5px; border-radius: 50%; display: inline-block; }
+
+        .section-title { font-size: 12px; color: var(--neon-blue); font-weight: bold; margin: 15px 0 8px 0; border-left: 3px solid var(--neon-blue); padding-left: 8px; }
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
+        .label { font-size: 10px; color: #94a3b8; margin-bottom: 4px; display: block; }
+        input, select { width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; font-size: 14px; box-sizing: border-box; }
+        
+        .save-btn { width: 100%; padding: 15px; background: linear-gradient(45deg, #00d2ff, #0081ff); border: none; border-radius: 12px; color: #000; font-size: 16px; font-weight: 900; cursor: pointer; margin-top: 5px; }
+        .query-btn { width: 100%; padding: 10px; background: transparent; border: 1px solid var(--neon-blue); border-radius: 8px; color: var(--neon-blue); font-weight: bold; cursor: pointer; }
+        
+        .quick-btns { display: flex; gap: 4px; margin-bottom: 10px; }
+        .quick-btns button { flex: 1; padding: 6px; font-size: 11px; background: rgba(255,255,255,0.05); border: none; color: #94a3b8; border-radius: 6px; cursor: pointer; }
+        .quick-btns button.active { background: var(--neon-blue); color: #000; font-weight: bold; }
+        
+        #search-res { margin-top: 10px; padding: 15px; background: rgba(0,210,255,0.05); border-radius: 15px; border: 1px solid rgba(0,210,255,0.2); display: none; }
+        .detail-list { margin-top: 10px; max-height: 250px; overflow-y: auto; font-size: 12px; text-align: left; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; }
+        .detail-item { display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .detail-date { color: #94a3b8; width: 80px; font-size: 10px; }
+        .detail-mem { background: rgba(255,255,255,0.1); padding: 1px 4px; border-radius: 4px; margin-right: 5px; font-size: 10px; color: var(--neon-blue); min-width: 30px; text-align: center; }
+        .detail-desc { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .detail-amt { color: var(--neon-red); font-weight: bold; font-family: monospace; padding-left: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h3 class="title">💎 JOE 一路發</h3>
+
+    <div class="quick-btns">
+        <button onclick="setQuickDate('today', this)">今日</button>
+        <button onclick="setQuickDate('month', this)" class="active">本月</button>
+        <button onclick="setQuickDate('year', this)">本年</button>
+    </div>
+
+    <div class="dashboard">
+        <div><div class="stat-label">💰 收入</div><div id="disp-income" class="stat-value" style="color:var(--neon-green)">$0</div></div>
+        <div><div class="stat-label">💸 支出</div><div id="disp-expense" class="stat-value" style="color:var(--neon-red)">$0</div></div>
+        <div><div class="stat-label">🏦 結餘</div><div id="disp-net" class="stat-value" style="color:var(--neon-blue)">$0</div></div>
+    </div>
+
+    <div class="charts-row">
+        <div class="chart-box">
+            <div id="inc-chart" class="chart-obj"></div>
+            <div id="inc-legend" class="custom-legend"></div>
+        </div>
+        <div class="chart-box">
+            <div id="exp-chart" class="chart-obj"></div>
+            <div id="exp-legend" class="custom-legend"></div>
+        </div>
+        <div class="chart-box">
+            <div id="net-chart" class="chart-obj"></div>
+            <div id="net-legend" class="custom-legend"></div>
+        </div>        
+    </div>
+
+    <div class="section-title">✍️ 新增帳目</div>
+    <div class="input-grid">
+        <div><span class="label">📅 日期</span><input type="date" id="entry-date"></div>
+        <div><span class="label">💵 金額</span><input type="number" id="amount" placeholder="金額" inputmode="decimal"></div>
+    </div>
+    <div class="input-grid">
+        <div><span class="label">📝 項目</span><input type="text" id="desc" placeholder="例如：產檢、尿布"></div>
+        <div><span class="label">🏷️ 分類</span>
+            <select id="type">
+                <optgroup label="支出">
+                    <option value="飲食">🍔 飲食</option>
+                    <option value="醫療">🏥 醫療/產檢</option>
+                    <option value="育兒">👶 育兒用品</option>
+                    <option value="生活">🏠 生活用品</option>
+                    <option value="交通">🚗 交通</option>
+                    <option value="住宿">🏨 住宿/旅遊</option>
+                    <option value="娛樂">🎮 娛樂</option>
+                </optgroup>
+                <optgroup label="收入">
+                    <option value="本薪">💰 本薪</option>
+                    <option value="出差費">✈️ 出差費/補助</option>
+                    <option value="其他收入">🌐 其他收入</option>
+                </optgroup>
+            </select>
+        </div>
+    </div>
+    <div class="input-grid">
+        <div><span class="label">👤 對象</span>
+            <select id="member">
+                <option value="我">🧑 我</option>
+                <option value="老婆">👩 老婆</option>
+                <option value="雪糕">🤱 雪糕</option>
+                <option value="冰棒">🧒 冰棒</option>
+                <option value="家庭">🏠 家庭</option>
+                <option value="家族">👨‍👩‍👧‍👦 家族</option>
+            </select>
+        </div>
+        <div style="display:flex; align-items:flex-end;"><button onclick="saveData()" id="saveBtn" class="save-btn">確認同步</button></div>
+    </div>
+
+    <div class="section-title">🔍 成員花費查詢</div>
+    <div class="input-grid">
+        <div><span class="label">👤 選擇成員</span>
+            <select id="q-mem">
+                <option value="全部">🌈 全部成員</option>
+                <option value="我">🧑 我</option>
+                <option value="老婆">👩 老婆</option>
+                <option value="雪糕">🤱 雪糕</option>
+                <option value="冰棒">🧒 冰棒</option>
+                <option value="家庭">🏠 家庭</option>
+                <option value="家族">👨‍👩‍👧‍👦 家族</option>
+            </select>
+        </div>
+        <div><span class="label">📅 開始</span><input type="date" id="q-start"></div>
+    </div>
+    <div class="input-grid">
+        <div><span class="label">📅 結束</span><input type="date" id="q-end"></div>
+        <div style="display:flex; align-items:flex-end;"><button onclick="queryMem()" class="query-btn">計算金額</button></div>
+    </div>
+    
+    <div id="search-res">
+        <div id="res-t" style="font-size: 11px; color: #94a3b8; text-align: center;"></div>
+        <div id="res-v" style="font-size: 20px; font-weight: 900; color: var(--neon-blue); text-align: center; margin-bottom: 10px;"></div>
+        <div id="res-list" class="detail-list"></div>
+    </div>
+</div>
+
+<input type="hidden" id="h-start"><input type="hidden" id="h-end">
+
+<script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwPu2wDdL1oX-izhvJSNjxEpFbskKunk8eCalpjlSl4V_obFjDxBqLH1HzWGUof__hd/exec"; 
+    let rawRows = [];
+    const colors = {
+        exp: ['#FF3131', '#FF9F43', '#FECA57', '#54A0FF', '#5F27CD', '#FF6B6B'],
+        inc: ['#39FF14', '#00D2FF', '#BC13FE', '#FF00FF'],
+        net: ['#1E293B', '#00D2FF']
+    };
+
+    google.charts.load('current', {'packages':['corechart']});
+
+    window.onload = () => {
+        const t = new Date().toISOString().split('T')[0];
+        document.getElementById('entry-date').value = t;
+        document.getElementById('q-start').value = t.substring(0,8) + "01";
+        document.getElementById('q-end').value = t;
+        setQuickDate('month', document.querySelector('.quick-btns button.active'));
+        fetchData();
+    };
+
+    async function fetchData() {
+        if(!GAS_URL || GAS_URL.includes("您的")) return;
+        try { const r = await fetch(GAS_URL); rawRows = await r.json(); filterData(); } catch(e){ console.error(e); }
+    }
+
+    function setQuickDate(mode, btn) {
+        document.querySelectorAll('.quick-btns button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const now = new Date();
+        let s = new Date(now.getFullYear(), now.getMonth(), 1);
+        let e = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        if(mode==='today'){ s=now; e=now; }
+        else if(mode==='year'){ s=new Date(now.getFullYear(), 0, 1); e=new Date(now.getFullYear(), 11, 31); }
+        document.getElementById('h-start').value = s.toISOString().split('T')[0];
+        document.getElementById('h-end').value = e.toISOString().split('T')[0];
+        if(rawRows.length > 0) filterData();
+    }
+
+    function filterData() {
+        const s = new Date(document.getElementById('h-start').value);
+        const e = new Date(document.getElementById('h-end').value).setHours(23,59,59);
+        let i_t=0, e_t=0, eM={}, iM={};
+        const incTs = ["本薪", "出差費", "獎金", "股票收益", "股息", "其他收入", "出差補助"];
+
+        for (let i = 1; i < rawRows.length; i++) {
+            const dStr = String(rawRows[i][0]);
+            const d = new Date(dStr);
+            const a = Number(rawRows[i][2]);
+            const c = rawRows[i][3];
+
+            if (d >= s && d <= e) {
+                if (incTs.includes(c)) { i_t+=a; iM[c] = (iM[c]||0)+a; }
+                else { e_t+=a; eM[c] = (eM[c]||0)+a; }
+            }
+        }
+        document.getElementById('disp-income').innerText = `$${i_t.toLocaleString()}`;
+        document.getElementById('disp-expense').innerText = `$${e_t.toLocaleString()}`;
+        document.getElementById('disp-net').innerText = `$${(i_t-e_t).toLocaleString()}`;
+
+        google.charts.setOnLoadCallback(() => {
+            draw('exp-chart', Object.entries(eM), colors.exp, 'exp-legend');
+            draw('inc-chart', Object.entries(iM), colors.inc, 'inc-legend');
+            const balance = i_t - e_t;
+            if (balance >= 0) { draw('net-chart', [['支出', e_t], ['結餘', balance]], colors.net, 'net-legend'); }
+            else { draw('net-chart', [['收入', i_t], ['超支', Math.abs(balance)]], ['#39FF14', '#FF3131'], 'net-legend'); }
+        });    
+    }
+
+    function draw(id, dataArr, clrs, legId) {
+        const con = document.getElementById(id);
+        const leg = document.getElementById(legId);
+        leg.innerHTML = '';
+        if (dataArr.length === 0) { con.innerHTML = "<div style='margin-top:30px;font-size:9px;'>無資料</div>"; return; }
+        const data = google.visualization.arrayToDataTable([['L','V'], ...dataArr]);
+        new google.visualization.PieChart(con).draw(data, {
+            backgroundColor: 'transparent', pieHole: 0.6, colors: clrs,
+            legend: 'none', chartArea: {width:'100%', height:'100%'}, pieSliceBorderColor: "none", pieSliceText: 'none'
+        });
+        dataArr.forEach((item, idx) => {
+            leg.innerHTML += `<div class="legend-item"><span class="dot" style="background:${clrs[idx%clrs.length]}"></span>${item[0]}</div>`;
+        });
+    }
+
+    async function saveData() {
+        const btn = document.getElementById('saveBtn');
+        const data = {
+            date: document.getElementById('entry-date').value,
+            desc: document.getElementById('desc').value || "未命名",
+            amount: document.getElementById('amount').value,
+            type: document.getElementById('type').value,
+            member: document.getElementById('member').value,
+            method: "App"
+        };
+        if (!data.amount) { alert("⚠️ 請輸入金額"); return; }
+        btn.disabled = true; btn.innerText = "⏳ 同步中...";
+        try {
+            await fetch(GAS_URL, { method: "POST", mode: 'no-cors', body: JSON.stringify(data) });
+            alert("✅ 同步完成！");
+            location.reload();
+        } catch (e) { alert("❌ 同步失敗"); btn.disabled = false; btn.innerText = "確認同步"; }
+    }
+
+    // 更新：queryMem 加入「全部」判斷與明細顯示
+    function queryMem() {
+        const target = document.getElementById('q-mem').value;
+        const s = new Date(document.getElementById('q-start').value);
+        const e = new Date(document.getElementById('q-end').value).setHours(23,59,59);
+        const incTs = ["本薪", "出差費", "獎金", "股票收益", "股息", "其他收入", "出差補助"];
+        let total = 0;
+        let filteredData = [];
+
+        for (let i = 1; i < rawRows.length; i++) {
+            const d = new Date(rawRows[i][0]);
+            const item = rawRows[i][1];
+            const a = Number(rawRows[i][2]);
+            const c = rawRows[i][3];
+            const m = rawRows[i][4];
+
+            // 邏輯判斷：如果是「全部」，則不篩選成員名稱；否則篩選指定成員
+            const isTargetMember = (target === "全部") || (m === target);
+
+            if (d >= s && d <= e && isTargetMember && !incTs.includes(c)) { 
+                total += a; 
+                filteredData.push({ 
+                    date: rawRows[i][0].split('T')[0], 
+                    member: m,
+                    desc: item, 
+                    amt: a 
+                });
+            }
+        }
+
+        filteredData.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        let detailsHtml = "";
+        filteredData.forEach(x => {
+            detailsHtml += `
+                <div class="detail-item">
+                    <span class="detail-date">${x.date}</span>
+                    <span class="detail-mem">${x.member}</span>
+                    <span class="detail-desc">${x.desc}</span>
+                    <span class="detail-amt">$${x.amt.toLocaleString()}</span>
+                </div>`;
+        });
+
+        document.getElementById('search-res').style.display = 'block';
+        document.getElementById('res-t').innerText = `${target} 的區間花費：`;
+        document.getElementById('res-v').innerText = `$${total.toLocaleString()}`;
+        document.getElementById('res-list').innerHTML = detailsHtml || "<div style='text-align:center;padding:10px;color:#666;'>此區間無消費紀錄</div>";
+    }
+</script>
+</body>
+</html>
